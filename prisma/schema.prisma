@@ -27,110 +27,172 @@ enum Gender {
   UNKNOWN
 }
 
+enum RegionDex {
+  RBY
+  GSC
+  RSE
+  FRLG
+  DP
+  PLATINUM
+  HGSS
+  BW
+  BW2
+  LETSGO
+}
+
+enum ElementalType {
+  BUG
+  DARK
+  DRAGON
+  ELECTRIC
+  FAIRY
+  FIGHTING
+  FIRE
+  FLYING
+  GHOST
+  GRASS
+  GROUND
+  ICE
+  NORMAL
+  POISON
+  PSYCHIC
+  ROCK
+  STEEL
+  STELLAR
+  UNKNOWN
+  WATER
+}
+
 model Console {
   id        Int      @id @default(autoincrement())
+  name      String   @unique
+  games     Game[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  games     Game[]
-  name      String   @unique
 }
 
 model Evolution {
   id              Int            @id @default(autoincrement())
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  after           Pokemon        @relation("AfterEvolution", fields: [afterId], references: [id])
-  afterId         Int
-  before          Pokemon        @relation("BeforeEvolution", fields: [beforeId], references: [id])
-  beforeId        Int
+  before          Pokemon        @relation("BeforeEvolution", fields: [beforeId, beforeName, beforeGender], references: [id, speciesFormName, gender])
+  beforeName      String
+  beforeGender    Gender
+  after           Pokemon        @relation("AfterEvolution", fields: [afterId, afterName, afterGender], references: [id, speciesFormName, gender])
+  afterName       String
+  afterGender     Gender
+  level           Int?
+  item            String?
+  trade           Boolean        @default(false)
+  time            EvolutionTime?
   friendshipLevel Int?
   game            Game[]
   heldItem        String?
-  item            String?
   letsGoSteps     Int?
-  level           Int?
   location        String?
   move            String?
   region          String?
-  time            EvolutionTime?
-  trade           Boolean        @default(false)
   unique          String?
+  beforeId        Int
+  afterId         Int
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Game {
   id                Int                     @id @default(autoincrement())
+  title             String                  @unique
+  consoles          Console[]
+  generation        Int
+  releaseDate       DateTime
+  regionDex         RegionDex
+  compatiblePokemon GameCompatiblePokemon[] // All Pokemon that can be registered in the game.
+  evolutions        Evolution[]
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
-  compatiblePokemon GameCompatiblePokemon[] // All Pokemon that can be registered in the game.
-  consoles          Console[]
-  evolutions        Evolution[]
-  generation        Int
-  regionDex         RegionDexSpecies[] // I.e. not the national dex
-  releaseDate       DateTime
-  title             String                  @unique
+
+  @@unique([id, title])
 }
 
 model GameCompatiblePokemon {
   id               Int                     @id @default(autoincrement())
-  createdAt        DateTime                @default(now())
-  updatedAt        DateTime                @updatedAt
-  availability     GamePokemonAvailability
+  game             Game                    @relation(fields: [gameId, gameTitle], references: [id, title])
+  gameTitle        String
+  pokemon          Pokemon                 @relation(fields: [pokemonId, pokemonName, pokemonGender], references: [id, speciesFormName, gender])
+  pokemonName      String
+  pokemonGender    Gender
+  availability     GamePokemonAvailability @default(NATIVE)
   availabilityInfo String?
   choiceLocks      Pokemon[]               @relation("GameChoiceLocks")
-  game             Game                    @relation(fields: [gameId], references: [id])
-  gameId           Int
-  pokemon          Pokemon                 @relation(fields: [pokemonId], references: [id])
-  pokemonId        Int
   shinyInfo        String?
   shinyLocked      Boolean                 @default(false)
+  gameId           Int
+  pokemonId        Int
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
 }
 
 // The most specific form a Pokemon can be before getting to individuals, e.g. male Hoenn Cap Pikachu
 model Pokemon {
   id              Int                     @id @default(autoincrement())
+  speciesForm     SpeciesForm             @relation(fields: [speciesFormId, speciesFormName], references: [id, name])
+  speciesFormName String
+  gender          Gender
+  canBeShiny      Boolean                 @default(true)
+  imageUrl        String
+  shinyUrl        String?
+  evolutions      Evolution[]             @relation("AfterEvolution")
+  prevolutions    Evolution[]             @relation("BeforeEvolution")
+  compatibleGames GameCompatiblePokemon[]
+  choiceLocks     GameCompatiblePokemon[] @relation("GameChoiceLocks")
+  speciesFormId   Int
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
-  canBeShiny      Boolean                 @default(true)
-  choiceLocks     GameCompatiblePokemon[] @relation("GameChoiceLocks")
-  compatibleGames GameCompatiblePokemon[]
-  evolutions      Evolution[]             @relation("AfterEvolution")
-  gender          Gender
-  imageUrl        String
-  prevolutions    Evolution[]             @relation("BeforeEvolution")
-  speciesForm     SpeciesForm             @relation(fields: [speciesFormId], references: [id])
-  speciesFormId   Int
+
+  @@unique([speciesFormId, gender])
+  @@unique([id, speciesFormName])
+  @@unique([id, speciesFormName, gender])
 }
 
 model RegionDexSpecies {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  games     Game[]
-  index     Int
-  species   Species  @relation(fields: [speciesId], references: [id])
-  speciesId Int
+  id          Int       @id @default(autoincrement())
+  regionDex   RegionDex
+  index       Int
+  species     Species   @relation(fields: [speciesId, speciesName], references: [id, name])
+  speciesName String
+  speciesId   Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([regionDex, index])
 }
 
 // A species of Pokemon, e.g. Pikachu, Articuno
 model Species {
   id           Int                @id @default(autoincrement())
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
   dexNum       Int                @unique
   name         String
-  regionDexes  RegionDexSpecies[]
+  japaneseName String             @default("")
   speciesForms SpeciesForm[]
+  regionDexes  RegionDexSpecies[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@unique([id, name])
 }
 
 // A form of a Pokemon species, e.g. Hoenn Cap Pikachu, Galarian Articuno
 model SpeciesForm {
-  id               Int       @id @default(autoincrement())
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
-  isSpeciesDefault Boolean   @default(true)
+  id               Int            @id @default(autoincrement())
   name             String
+  species          Species        @relation(fields: [speciesId, speciesName], references: [id, name])
+  speciesName      String
+  isSpeciesDefault Boolean        @default(false)
+  prefix           String?
+  type             ElementalType
+  type2            ElementalType?
   pokemon          Pokemon[]
-  prefix           String? // If different from `name`.
-  species          Species   @relation(fields: [speciesId], references: [id])
   speciesId        Int
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([id, name])
 }
