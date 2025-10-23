@@ -24,3 +24,14 @@ Alakazam
 Mew
 Meltan
 Melmetal
+
+
+
+======= ADD ORDER =======
+
+1. Species
+2. SpeciesForm
+3. Pokemon
+4. GameCompatiblePokemon
+5. RegionDexSpecies
+6. Evolution
