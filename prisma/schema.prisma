@@ -7,18 +7,130 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id      Int      @id @default(autoincrement())
-  email   String   @unique
-  name    String?
-  posts   Post[]
+enum EvolutionTime {
+  MORNING
+  DAY
+  NIGHT
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User?   @relation(fields: [authorId], references: [id])
-  authorId  Int?
+enum GamePokemonAvailability {
+  CHOICE // Can be obtained in the game but will lock other Pokemon out from being obtained natively.
+  EVENT // Can be obtained in the game via a wi-fi/mystery event.
+  EXTERNAL // Can be obtained in the game if an external requirement is met.
+  NATIVE // Can be obtained in the game with no restrictions.
+  UNAVAILABLE // Cannot be obtained in the game by any means except trading.
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+model Console {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  games     Game[]
+  name      String   @unique
+}
+
+model Evolution {
+  id              Int            @id @default(autoincrement())
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  after           Pokemon        @relation("AfterEvolution", fields: [afterId], references: [id])
+  afterId         Int
+  before          Pokemon        @relation("BeforeEvolution", fields: [beforeId], references: [id])
+  beforeId        Int
+  friendshipLevel Int?
+  game            Game[]
+  heldItem        String?
+  item            String?
+  letsGoSteps     Int?
+  level           Int?
+  location        String?
+  move            String?
+  region          String?
+  time            EvolutionTime?
+  trade           Boolean        @default(false)
+  unique          String?
+}
+
+model Game {
+  id                Int                     @id @default(autoincrement())
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  compatiblePokemon GameCompatiblePokemon[] // All Pokemon that can be registered in the game.
+  consoles          Console[]
+  evolutions        Evolution[]
+  generation        Int
+  regionDex         RegionDexSpecies[] // I.e. not the national dex
+  releaseDate       DateTime
+  title             String                  @unique
+}
+
+model GameCompatiblePokemon {
+  id               Int                     @id @default(autoincrement())
+  createdAt        DateTime                @default(now())
+  updatedAt        DateTime                @updatedAt
+  availability     GamePokemonAvailability
+  availabilityInfo String?
+  choiceLocks      Pokemon[]               @relation("GameChoiceLocks")
+  game             Game                    @relation(fields: [gameId], references: [id])
+  gameId           Int
+  pokemon          Pokemon                 @relation(fields: [pokemonId], references: [id])
+  pokemonId        Int
+  shinyInfo        String?
+  shinyLocked      Boolean                 @default(false)
+}
+
+// The most specific form a Pokemon can be before getting to individuals, e.g. male Hoenn Cap Pikachu
+model Pokemon {
+  id              Int                     @id @default(autoincrement())
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  canBeShiny      Boolean                 @default(true)
+  choiceLocks     GameCompatiblePokemon[] @relation("GameChoiceLocks")
+  compatibleGames GameCompatiblePokemon[]
+  evolutions      Evolution[]             @relation("AfterEvolution")
+  gender          Gender
+  imageUrl        String
+  prevolutions    Evolution[]             @relation("BeforeEvolution")
+  speciesForm     SpeciesForm             @relation(fields: [speciesFormId], references: [id])
+  speciesFormId   Int
+}
+
+model RegionDexSpecies {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  games     Game[]
+  index     Int
+  species   Species  @relation(fields: [speciesId], references: [id])
+  speciesId Int
+}
+
+// A species of Pokemon, e.g. Pikachu, Articuno
+model Species {
+  id           Int                @id @default(autoincrement())
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  dexNum       Int                @unique
+  name         String
+  regionDexes  RegionDexSpecies[]
+  speciesForms SpeciesForm[]
+}
+
+// A form of a Pokemon species, e.g. Hoenn Cap Pikachu, Galarian Articuno
+model SpeciesForm {
+  id               Int       @id @default(autoincrement())
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isSpeciesDefault Boolean   @default(true)
+  name             String
+  pokemon          Pokemon[]
+  prefix           String? // If different from `name`.
+  species          Species   @relation(fields: [speciesId], references: [id])
+  speciesId        Int
 }
