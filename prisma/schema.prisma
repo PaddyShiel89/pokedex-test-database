@@ -106,6 +106,7 @@ model Game {
   releaseDate       DateTime
   regionDex         RegionDex
   compatiblePokemon GameCompatiblePokemon[] // All Pokemon that can be registered in the game.
+  gameChoiceLocks   GameChoiceLocks[]
   evolutions        Evolution[]
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
@@ -122,13 +123,21 @@ model GameCompatiblePokemon {
   pokemonGender    Gender
   availability     GamePokemonAvailability @default(NATIVE)
   availabilityInfo String?
-  choiceLocks      Pokemon[]               @relation("GameChoiceLocks")
   shinyInfo        String?
   shinyLocked      Boolean                 @default(false)
   gameId           Int
   pokemonId        Int
   createdAt        DateTime                @default(now())
   updatedAt        DateTime                @updatedAt
+}
+
+model GameChoiceLocks {
+  id          Int       @id @default(autoincrement())
+  games       Game[]
+  pokemon     Pokemon[]
+  description String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 // The most specific form a Pokemon can be before getting to individuals, e.g. male Hoenn Cap Pikachu
@@ -142,8 +151,8 @@ model Pokemon {
   shinyUrl        String?
   evolutions      Evolution[]             @relation("AfterEvolution")
   prevolutions    Evolution[]             @relation("BeforeEvolution")
+  gameChoiceLocks GameChoiceLocks[]
   compatibleGames GameCompatiblePokemon[]
-  choiceLocks     GameCompatiblePokemon[] @relation("GameChoiceLocks")
   speciesFormId   Int
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
