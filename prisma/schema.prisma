@@ -38,6 +38,7 @@ enum RegionDex {
   BW
   BW2
   LETSGO
+  NATIONAL
 }
 
 enum ElementalType {
