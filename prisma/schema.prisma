@@ -181,6 +181,8 @@ model SpeciesForm {
   prefix           String?
   type             ElementalType
   type2            ElementalType?
+  /// Whether the form has a unique sprite/image for each gender.
+  gendersUnique    Boolean        @default(false)
   pokemon          Pokemon[]
   speciesId        Int
   createdAt        DateTime       @default(now())
