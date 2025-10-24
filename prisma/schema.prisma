@@ -73,29 +73,18 @@ model Console {
 }
 
 model Evolution {
-  id              Int            @id @default(autoincrement())
-  before          Pokemon        @relation("BeforeEvolution", fields: [beforeId, beforeName, beforeGender], references: [id, speciesFormName, gender])
-  beforeName      String
-  beforeGender    Gender
-  after           Pokemon        @relation("AfterEvolution", fields: [afterId, afterName, afterGender], references: [id, speciesFormName, gender])
-  afterName       String
-  afterGender     Gender
-  level           Int?
-  item            String?
-  trade           Boolean        @default(false)
-  time            EvolutionTime?
-  friendshipLevel Int?
-  game            Game[]
-  heldItem        String?
-  letsGoSteps     Int?
-  location        String?
-  move            String?
-  region          String?
-  unique          String?
-  beforeId        Int
-  afterId         Int
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id           Int      @id @default(autoincrement())
+  before       Pokemon  @relation("BeforeEvolution", fields: [beforeId, beforeName, beforeGender], references: [id, speciesFormName, gender])
+  beforeName   String
+  beforeGender Gender
+  after        Pokemon  @relation("AfterEvolution", fields: [afterId, afterName, afterGender], references: [id, speciesFormName, gender])
+  afterName    String
+  afterGender  Gender
+  tradeEvo     Boolean  @default(false)
+  beforeId     Int
+  afterId      Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Game {
@@ -107,7 +96,6 @@ model Game {
   regionDex         RegionDex
   compatiblePokemon GameCompatiblePokemon[] // All Pokemon that can be registered in the game.
   gameChoiceLocks   GameChoiceLocks[]
-  evolutions        Evolution[]
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
 
